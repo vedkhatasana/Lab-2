@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cat Info App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        input,
+        button,
+        select {
+            margin: 5px 0;
+            padding: 6px;
+        }
+
+        #output {
+            white-space: pre-line;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>🐾 Cat Info App</h3>
+
+    <!-- Buttons to trigger different functionalities -->
+    <button onclick="showAllNames()">📋 Show All Cat Names</button><br>
+
+    <!-- Filter by health issues -->
+    <input type="number" id="healthIssueInput" placeholder="Health Issues (e.g., 0)">
+    <button onclick="filterByHealthIssue()">🔍 Filter by Health Issues</button><br>
+
+    <!-- Unit selection for weight display -->
+    <label>
+        <input type="radio" name="unit" value="imperial" checked> Imperial (lbs)
+    </label>
+    <label>
+        <input type="radio" name="unit" value="metric"> Metric (kg)
+    </label>
+    <button onclick="showWeights()">⚖️ Show Weights</button><br>
+
+    <!-- Other analysis buttons -->
+    <button onclick="showIntelligenceFriendly()">🧠 Intelligence vs Friendliness</button><br>
+    <button onclick="showAverageIntelligence()">📊 Average Intelligence</button><br>
+    <button onclick="showAvgIntelligenceForChildFriendly()">👶 Avg Intelligence (Child Friendly = 4)</button><br>
+
+    <!-- Output display area -->
+    <div id="output">-- All Results will appear here --</div>
+
+    <script>
+        // Global array to store cat data
+        let cats = [];
+
+        // Fetching cat data from the API
+        fetch('https://api.thecatapi.com/v1/breeds')
+            .then(response => response.json())
+            .then(data => {
+                cats = data.map(cat => ({
+                    name: cat.name,
+                    weight_imperial: cat.weight?.imperial || "N/A",
+                    weight_metric: cat.weight?.metric || "N/A",
+                    intelligence: cat.intelligence ?? 0,
+                    child_friendly: cat.child_friendly ?? 0,
+                    health_issues: cat.health_issues ?? 0
+                }));
+                document.getElementById("output").innerText = "✅ Cat data loaded. Ready to use!";
+            })
+            .catch(error => {
+                document.getElementById("output").innerText = "❌ Failed to fetch cat data.";
+                console.error(error);
+            });
+
+        // Show all cat breed names
+        function showAllNames() {
+            const names = cats.map(cat => cat.name).join("\n");
+            document.getElementById("output").innerText = `📋 All Cat Names (Total: ${cats.length}):\n${names}`;
+        }
+
+        // Filter cats by number of health issues
+        function filterByHealthIssue() {
+            const issueCount = parseInt(document.getElementById("healthIssueInput").value);
+            if (isNaN(issueCount)) {
+                document.getElementById("output").innerText = "⚠️ Please enter a valid number for health issues.";
+                return;
+            }
+            const filtered = cats.filter(cat => cat.health_issues === issueCount);
+            const result = filtered.map(cat => cat.name).join("\n");
+            document.getElementById("output").innerText =
+                `🐱 Cats with Health Issues = ${issueCount} (Total: ${filtered.length}):\n${result}`;
+        }
+
+        // Show cat weights based on selected unit
+        function showWeights() {
+            const unit = document.querySelector('input[name="unit"]:checked').value;
+            const label = unit === "imperial" ? "Imperial (lbs)" : "Metric (kg)";
+            const list = cats.map(cat => `${cat.name}: ${unit === "imperial" ? cat.weight_imperial : cat.weight_metric}`).join("\n");
+            document.getElementById("output").innerText = `⚖️ Cat Weights in ${label}:\n${list}`;
+        }
+
+        // Display intelligence and friendliness of each cat
+        function showIntelligenceFriendly() {
+            const result = cats.map(cat =>
+                `${cat.name} → Intelligence: ${cat.intelligence}, Friendliness: ${cat.child_friendly}`
+            ).join("\n");
+            document.getElementById("output").innerText = result;
+        }
+
+        // Show average intelligence across all breeds
+        function showAverageIntelligence() {
+            if (cats.length === 0) return;
+            const totalIntelligence = cats.reduce((sum, cat) => sum + cat.intelligence, 0);
+            const average = totalIntelligence / cats.length;
+            document.getElementById("output").innerText = `📊 Average Intelligence: ${average.toFixed(2)}`;
+        }
+
+        // Show average intelligence for cats with child_friendly = 4
+        function showAvgIntelligenceForChildFriendly() {
+            const filtered = cats.filter(cat => cat.child_friendly === 4);
+            if (filtered.length === 0) {
+                document.getElementById("output").innerText = "⚠️ No cats found with Child Friendliness = 4.";
+                return;
+            }
+            const total = filtered.reduce((sum, cat) => sum + cat.intelligence, 0);
+            const average = total / filtered.length;
+            document.getElementById("output").innerText =
+                `👶 Average Intelligence (Child Friendly = 4):\n${average.toFixed(2)}`;
+        }
+    </script>
+</body>
+
+</html>
+
